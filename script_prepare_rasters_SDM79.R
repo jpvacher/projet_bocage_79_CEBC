@@ -1071,4 +1071,3 @@ proj4string(grid.species)=CRS("+init=epsg:2154")
 grid.species
 #raster::shapefile(grid.species, file="DATA_SPECIES_79/grid_occurrence_species_100m_79.shp")
 
-
