@@ -1,0 +1,230 @@
+---
+title: "Histograms variables Deux-Sèvres"
+author: "jpvacher"
+date: "2/17/2022"
+output:
+ pdf_document: default
+ number_sections: true
+ html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts = list(width.cutoff=80))
+```
+
+
+```{r,eval=T, message=FALSE, warning=F, results=FALSE}
+x=c("here","ggplot2", "gridExtra") #create a list with names of packages
+lapply(x, library, character.only=TRUE) #loop that read all the packages from the list
+```
+
+# Resolution 100 m
+
+```{r,eval=T, message=FALSE, warning=F, results=FALSE}
+env.var=read.table("env_variables.txt", h=T) #read the table
+summary(env.var)
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=T}
+#Check graphically the distribution of the variables####
+p1=ggplot(data=env.var, aes(x=per.pasture))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Pastures", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p2=ggplot(data=env.var, aes(x=per.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p3=ggplot(data=env.var, aes(x=per.housing))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Housings", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p4=ggplot(data=env.var, aes(x=dist.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p5=ggplot(data=env.var, aes(x=dist.pond))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Ponds", x="Distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p6=ggplot(data=env.var, aes(x=length.forest.edge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forest margins", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p7=ggplot(data=env.var, aes(x=length.hedge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Hedges", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p8=ggplot(data=env.var, aes(x=length.river))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Rivers", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p9=ggplot(data=env.var, aes(x=length.road))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Roads", x="Density (m/ha)", y="Frequency")+theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+
+#jpeg(file="plot_hist_env_var_1K.jpg", width=17, height=17, res=300, units="cm")
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,top="Data not transformed (grid 100 m)")
+#dev.off()
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=F}
+#Variable transformation####
+#transform the variables into log
+env.var.log=env.var
+str(env.var.log)
+cols=colnames(env.var.log[,c(2:10)])
+env.var.log[cols]=lapply(env.var.log[cols]+1, log) #on transforme en log (en ajoutant +1 pour éviter log(0)) les variables de distance
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=T}
+#Check graphically the distribution of the variables####
+p10=ggplot(data=env.var.log, aes(x=per.pasture))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Pastures", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p11=ggplot(data=env.var.log, aes(x=per.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p12=ggplot(data=env.var.log, aes(x=per.housing))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Housings", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p13=ggplot(data=env.var.log, aes(x=dist.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Log distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p14=ggplot(data=env.var.log, aes(x=dist.pond))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Ponds", x="Log distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p15=ggplot(data=env.var.log, aes(x=length.forest.edge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forest margins", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p16=ggplot(data=env.var.log, aes(x=length.hedge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Hedges", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p17=ggplot(data=env.var.log, aes(x=length.river))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Rivers", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p18=ggplot(data=env.var.log, aes(x=length.road))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Roads", x="Log density (m/ha)", y="Frequency")+theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+
+#jpeg(file="plot_hist_env_var_logtransf_1K.jpg", width=17, height=17, res=300, units="cm")
+grid.arrange(p10,p11,p12,p13,p14,p15,p16,p17,p18,top="Data log-transformed (grid 100 m)")
+#dev.off()
+
+#Better distribution for distance variables
+```
+
+# Resolution 1 km
+
+
+```{r,eval=T, message=FALSE, warning=F, results=FALSE}
+env.var=read.table("env_variables_1K.txt", h=T) #read the table
+summary(env.var)
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=T}
+#Check graphically the distribution of the variables####
+p1=ggplot(data=env.var, aes(x=per.pasture))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Pastures", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p2=ggplot(data=env.var, aes(x=per.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p3=ggplot(data=env.var, aes(x=per.housing))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Housings", x="Percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p4=ggplot(data=env.var, aes(x=dist.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p5=ggplot(data=env.var, aes(x=dist.pond))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Ponds", x="Distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p6=ggplot(data=env.var, aes(x=length.forest.edge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forest margins", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p7=ggplot(data=env.var, aes(x=length.hedge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Hedges", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p8=ggplot(data=env.var, aes(x=length.river))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Rivers", x="Density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p9=ggplot(data=env.var, aes(x=length.road))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Roads", x="Density (m/ha)", y="Frequency")+theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+
+#jpeg(file="plot_hist_env_var_1K.jpg", width=17, height=17, res=300, units="cm")
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,top="Data not transformed (grid 1 km)")
+#dev.off()
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=F}
+#Variable transformation####
+#transform the variables into log
+env.var.log=env.var
+str(env.var.log)
+cols=colnames(env.var.log[,c(2:10)])
+env.var.log[cols]=lapply(env.var.log[cols]+1, log) #on transforme en log (en ajoutant +1 pour éviter log(0)) les variables de distance
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=T}
+#Check graphically the distribution of the variables####
+p10=ggplot(data=env.var.log, aes(x=per.pasture))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Pastures", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p11=ggplot(data=env.var.log, aes(x=per.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p12=ggplot(data=env.var.log, aes(x=per.housing))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Housings", x="Log percentage", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p13=ggplot(data=env.var.log, aes(x=dist.forest))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forests", x="Log distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p14=ggplot(data=env.var.log, aes(x=dist.pond))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Ponds", x="Log distance (m)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p15=ggplot(data=env.var.log, aes(x=length.forest.edge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Forest margins", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p16=ggplot(data=env.var.log, aes(x=length.hedge))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Hedges", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p17=ggplot(data=env.var.log, aes(x=length.river))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Rivers", x="Log density (m/ha)", y="Frequency")+
+  theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+p18=ggplot(data=env.var.log, aes(x=length.road))+
+  geom_histogram(color="black", fill="grey", size=0.3)+
+  labs(title="Roads", x="Log density (m/ha)", y="Frequency")+theme(plot.title=element_text(size=11),axis.text=element_text(size=7), axis.title=element_text(size=9))
+
+#jpeg(file="plot_hist_env_var_logtransf_1K.jpg", width=17, height=17, res=300, units="cm")
+grid.arrange(p10,p11,p12,p13,p14,p15,p16,p17,p18,top="Data log-transformed (grid 1 km)")
+#dev.off()
+
+#Better distribution for distance variables
+```
+
