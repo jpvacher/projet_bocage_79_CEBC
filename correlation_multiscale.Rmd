@@ -1,0 +1,36 @@
+---
+title: "Correlation multiscale environment variables"
+author: "jpvacher"
+date: "2/23/2022"
+output: 
+ pdf_document: default
+ number_sections: true
+ html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts = list(width.cutoff=80))
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=FALSE}
+x=c("here", "ggplot2", "GGally", "gridExtra")
+lapply(x, library, character.only=T)
+dens=read.table("density_hedges_multiscale.txt", h=T)
+col_odd=seq_len(ncol(dens)) %%2 #build a column indicator
+
+
+lowerFn=function(data, mapping,...){
+	p<-ggplot(data=data, mapping=mapping)+
+#	geom_smooth(color="black", method="lm", size=.3,...)+
+	geom_point(color="black", size=0.3)+
+	theme(axis.text.x = element_text(size=6), axis.text.y = element_text(size=6))
+	p
+}
+```
+
+```{r,eval=T, message=FALSE, warning=F, results=T}
+ggpairs(dens[,col_odd==0], upper=list(continuous=wrap("cor", size=3)), lower=list(continuous=wrap(lowerFn)), title="Multiscale correlations of density of hedges (m/ha) (n = 128)")
+```
+
+
