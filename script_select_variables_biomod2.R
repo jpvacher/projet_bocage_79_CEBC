@@ -1,10 +1,10 @@
 ######################################################
 #script written by Jean-Pierre Vacher 4 January 2022
-#updated 16 February 2022
+#updated 24 February 2022
 ######################################################
 
 #charge the packages
-x=c("here","sf","dismo","ggmap", "rgdal", "rgeos", "maptools", "dplyr", "tidyr", "tmap", "raster","mapdata","sp","spdep","colorRamps","ggplot2","gridExtra","virtualspecies") #create a list with names of packages
+x=c("here","sf","dismo","ggmap", "rgdal", "rgeos", "maptools", "dplyr", "tidyr", "tmap", "raster","mapdata","sp","spdep","colorRamps","ggplot2","gridExtra","usdm","virtualspecies") #create a list with names of packages
 lapply(x, library, character.only=TRUE) #loop that read all the packages from the list
 
 ################################
@@ -21,12 +21,12 @@ data.sp=read.csv("DATA_SPECIES_79/data_species_grid100m_79.csv") #read filtered 
 #Read stacked raster files####
 #create an object that gather all the raster layers of the environmental variables
 #attention pour générer la liste de rasters, il ne faut pas prendre les fichiers .xml qui sont générés au moment de l'export des couches raster en ascii. Donc prévoir un nouveau dossier dans lequel on range les seulement les fichiers .asc et .prj
-list.rasters=(list.files("env_variables_log", full.names=T,pattern=".asc")) #provide the path of the directory where the raster layers saved
+list.rasters=(list.files("env_variables_log_complete", full.names=T,pattern=".asc")) #provide the path of the directory where the raster layers saved
 rasters=stack(list.rasters) #stack the layers
 rasters #check what it looks like
 projection(rasters)=CRS("+init=epsg:2154") #assign a projection system, here 2154 for Lambert 93
 #pdf(file="plot_raster_variables.pdf") #save as a pdf file
-jpeg(file="plot_raster_variables_log_transformed.jpg", height=17, width=17, units="cm", res=200) #save as a jpg file
+jpeg(file="figures/plot_raster_variables_log_transformed.jpg", height=17, width=17, units="cm", res=200) #save as a jpg file
 plot(rasters) #plot all the rasters on one panel
 dev.off() #save the file in the working directory
 
@@ -39,19 +39,26 @@ rasters.reduced=removeCollinearity(rasters, multicollinearity.cutoff=0.7, plot=T
 rasters.reduced #check the results
 
 #with VIF####
+env.var=read.table("env_variables.txt", h=T) #read the table
+env.var.log=env.var
+str(env.var.log)
+cols=colnames(env.var.log[,c(2:10)])
+env.var.log[cols]=lapply(env.var.log[cols]+1, log) #on transforme en log (en ajoutant +1 pour éviter log(0)) les variables de distance
+#library(usdm)
 vif(env.var.log[,2:10])
 #            Variables      VIF
-#1        per.pasture  1.375754
-#2        per.housing  1.098311
-#3         per.forest 10.380026
-#4        length.road  1.123727
-#5 length.forest.edge  3.330433
-#6       length.hedge  1.461769
-#7       length.river  1.092277
-#8        dist.forest  7.334228
-#9          dist.pond  1.274514
+#1        Variables       VIF
+#1      per.pasture  1.467432
+#2      per.housing  1.096819
+#3       per.forest 10.461209
+#4        dens.road  1.122030
+#5 dens.forest.edge  3.233514
+#6       dens.hedge  1.507544
+#7       dens.river  1.094012
+#8      dist.forest  7.492233
+#9        dist.pond  1.291327
 
-#VIF values from 5 to 10 are considered critical.
+#VIF values from 5 to 10 are considered critical. So we can run vif again without per.forest and dist.forest
 
 vif(env.var.log[,c(2:3,5:10)])
 #           Variables      VIF
@@ -63,6 +70,8 @@ vif(env.var.log[,c(2:3,5:10)])
 #6       length.river 1.101057
 #7        dist.forest 2.354780
 #8          dist.pond 1.262357
+
+#Now it seems ok
 
 vifcor(env.var.log[,2:10], th=.7) #VIF with a correlation threshold at r = 0.7
 #2 variables from the 9 input variables have collinearity problem: 
