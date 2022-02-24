@@ -47,29 +47,27 @@ env.var.log[cols]=lapply(env.var.log[cols]+1, log) #on transforme en log (en ajo
 #library(usdm)
 vif(env.var.log[,2:10])
 #            Variables      VIF
-#1        Variables       VIF
-#1      per.pasture  1.467432
-#2      per.housing  1.096819
-#3       per.forest 10.461209
-#4        dens.road  1.122030
-#5 dens.forest.edge  3.233514
-#6       dens.hedge  1.507544
-#7       dens.river  1.094012
-#8      dist.forest  7.492233
-#9        dist.pond  1.291327
+#1       per.pasture  1.400109
+#2      per.housing  1.111231
+#3       per.forest 10.212438
+#4        dens.road  1.125261
+#5 dens.forest.edge  3.230023
+#6       dens.hedge  1.491303
+#7       dens.river  1.123069
+#8      dist.forest  7.240955
+#9        dist.pond  1.254532
 
 #VIF values from 5 to 10 are considered critical. So we can run vif again without per.forest and dist.forest
 
-vif(env.var.log[,c(2:3,5:10)])
+vif(env.var.log[,c(2:3,5:8,10)])
 #           Variables      VIF
-#1        per.pasture 1.436625
-#2        per.housing 1.076937
-#3        length.road 1.125138
-#4 length.forest.edge 2.325368
-#5       length.hedge 1.468289
-#6       length.river 1.101057
-#7        dist.forest 2.354780
-#8          dist.pond 1.262357
+#1        per.pasture 1.455162
+#2      per.housing 1.075617
+#3        dens.road 1.108439
+#4 dens.forest.edge 1.058071
+#5       dens.hedge 1.440763
+#6       dens.river 1.103888
+#7        dist.pond 1.278821
 
 #Now it seems ok
 
@@ -79,27 +77,48 @@ vifcor(env.var.log[,2:10], th=.7) #VIF with a correlation threshold at r = 0.7
 #per.forest dist.forest 
 #
 #After excluding the collinear variables, the linear correlation coefficients ranges between: 
-#min correlation ( length.forest.edge ~ per.housing ):  0.003254449 
-#max correlation ( length.hedge ~ per.pasture ):  0.4711882 
+#min correlation ( dist.pond ~ dens.forest.edge ):  -0.005402574 
+#max correlation ( dens.hedge ~ per.pasture ):  0.4561517 
 #
 #---------- VIFs of the remained variables -------- 
-#           Variables      VIF
-#1        per.pasture 1.427354
-#2        per.housing 1.099587
-#3        length.road 1.143094
-#4 length.forest.edge 1.041377
-#5       length.hedge 1.436132
-#6       length.river 1.081945
-#7          dist.pond 1.260216
+#  Variables      VIF
+#1      per.pasture 1.408473
+#2      per.housing 1.076855
+#3        dens.road 1.122766
+#4 dens.forest.edge 1.036860
+#5       dens.hedge 1.400765
+#6       dens.river 1.075766
+#7        dist.pond 1.242366
 
-rasters.selected=subset(rasters, c("dist_pond","length_river","length_forest_edges","length_hedges","length_roads","per_housing","per_pastures")) #create an object that contains all the variables that were selected
-
+rasters.selected=subset(rasters, c("per_pastures","per_housing","dens_roads","dens_forest_edges","dens_hedges","dens_river","dist_pond")) #create an object that contains all the variables that were selected
+#plot(rasters.selected) #check how it looks like
 
 ###########################
 #Salamandra salamandra####
 ##########################
 ss=data.sp[data.sp$species=="Salamandra_salamandra",] #select the data for the focal species
+ss=ss[!duplicated(ss),] #remove duplicated occurrences to avoid pseudoreplication
 
+#check graphically how it looks like
+#plot(rasters.selected$dens_hedges) #plot the raster of hedges density
+#points(ss[,2:3], pch=21, bg=alpha("yellow",.5), lwd=.3,cex=.5) #plot the points of occurrence of S. salamandra. The numbers of columns correspond to the longitude and latitude.
+
+#select variables with PCA####
+library(ade4)
+envdata=data.frame(raster::extract(x=rasters, y=cbind(ss[,2], ss[,3]))) #build a dataframe that contains the values of each variable for the species locations
+envdata=na.omit(envdata) #remove the rows with na
+str(envdata) #check how it looks like
+pca1<-dudi.pca(envdata, scannf = F, nf=2) #run the pca
+round(pca1$eig/sum(pca1$eig)*100,2)
+plot(pca1$li[,1:2]) #plot the pca to see what it looks like (no outliers)
+summary(pca1$li)
+s.corcircle(pca1$co) #plot the correlation circle
+#per_forest and dist_forest negatively correlated
+#per_pastures and dens_hedges correlated
+#dist_pond and dens_hedges+per_pastures negatively correlated
+#dens_roads and per_housing correlated
+
+#select variables with GLM####
 presvals=raster::extract(rasters.selected,as.data.frame(ss)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
 backgr=randomPoints(rasters.selected,1000) #background values
@@ -194,6 +213,7 @@ selected.model #print the name of the model
 #Lissotriton helveticus####
 ###########################
 lh=data.sp[data.sp$species=="Lissotriton_helveticus",] #select the data for the focal species
+lh=lh[!duplicated(lh),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(lh)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -289,6 +309,7 @@ selected.model #print the name of the model
 #Triturus cristatus####
 #########################
 tc=data.sp[data.sp$species=="Triturus_cristatus",] #select the data for the focal species
+tc=tc[!duplicated(tc),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(tc)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -385,6 +406,7 @@ selected.model #print the name of the model
 #Triturus marmoratus####
 #########################
 tm=data.sp[data.sp$species=="Triturus_marmoratus",] #select the data for the focal species
+tm=tm[!duplicated(tm),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(tm)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -481,6 +503,7 @@ selected.model #print the name of the model
 #Triturus blasii####
 #####################
 tb=data.sp[data.sp$species=="Triturus_blasii",] #select the data for the focal species
+tb=tb[!duplicated(tb),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(tb)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -577,6 +600,7 @@ selected.model #print the name of the model
 #Alytes obstetricans####
 ########################
 ao=data.sp[data.sp$species=="Alytes_obstetricans",] #select the data for the focal species
+ao=ao[!duplicated(ao),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(ao)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -673,6 +697,7 @@ selected.model #print the name of the model
 #Pelodytes punctatus####
 ########################
 pp=data.sp[data.sp$species=="Pelodytes_punctatus",] #select the data for the focal species
+pp=pp[!duplicated(pp),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(pp)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -768,6 +793,7 @@ selected.model #print the name of the model
 #Bufo spinosus####
 #####################
 bs=data.sp[data.sp$species=="Bufo_spinosus",] #select the data for the focal species
+bs=bs[!duplicated(bs),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(bs)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -865,6 +891,7 @@ selected.model #print the name of the model
 #Epidalea calamita####
 ######################
 ec=data.sp[data.sp$species=="Epidalea_calamita",] #select the data for the focal species
+ec=ec[!duplicated(ec),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(ec)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -960,6 +987,7 @@ selected.model #print the name of the model
 #Hyla arborea####
 #####################
 ha=data.sp[data.sp$species=="Hyla_arborea",] #select the data for the focal species
+ha=ha[!duplicated(ha),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(ha)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -1056,6 +1084,7 @@ selected.model #print the name of the model
 #Rana dalmatina####
 ###################
 rd=data.sp[data.sp$species=="Rana_dalmatina",] #select the data for the focal species
+rd=rd[!duplicated(rd),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(rd)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -1153,6 +1182,7 @@ selected.model
 #Rana temporaria####
 ####################
 rt=data.sp[data.sp$species=="Rana_temporaria",] #select the data for the focal species
+rt=rt[!duplicated(rt),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(rt)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -1248,6 +1278,7 @@ selected.model
 #Pelophylax esculentus####
 ##########################
 pe=data.sp[data.sp$species=="Pelophylax_esculentus",] #select the data for the focal species
+pe=pe[!duplicated(pe),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(pe)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -1343,6 +1374,7 @@ selected.model
 #Pelophylax ridibundus####
 ##########################
 pr=data.sp[data.sp$species=="Pelophylax_ridibundus",] #select the data for the focal species
+pr=pr[!duplicated(pr),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(pr)[,2:3]) #extract the values from the rasters
 set.seed(1963) #setting random seed
@@ -1439,6 +1471,7 @@ selected.model
 #Anguis fragilis####
 #########################
 af=data.sp[data.sp$species=="Anguis_fragilis",] #select the data for the focal species
+af=af[!duplicated(af),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(af)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1528,6 +1561,7 @@ selected.model #print the name of the model
 #Podarcis muralis####
 #########################
 pm=data.sp[data.sp$species=="Podarcis_muralis",] #select the data for the focal species
+pm=pm[!duplicated(pm),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(pm)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1619,6 +1653,7 @@ selected.model #print the name of the model
 #Lacerta bilineata####
 #########################
 lb=data.sp[data.sp$species=="Lacerta_bilineata",] #select the data for the focal species
+lb=lb[!duplicated(lb),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(lb)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1710,6 +1745,7 @@ selected.model #print the name of the model
 #Natrix helvetica####
 #########################
 nh=data.sp[data.sp$species=="Natrix_helvetica",] #select the data for the focal species
+nh=nh[!duplicated(nh),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(nh)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1801,6 +1837,7 @@ selected.model #print the name of the model
 #Natrix maura####
 ##################
 nm=data.sp[data.sp$species=="Natrix_maura",] #select the data for the focal species
+nm=nm[!duplicated(nm),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(nm)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1892,6 +1929,7 @@ selected.model #print the name of the model
 #Hierophis viridiflavus####
 ###########################
 hv=data.sp[data.sp$species=="Hierophis_viridiflavus",] #select the data for the focal species
+hv=hv[!duplicated(hv),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(hv)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -1981,6 +2019,7 @@ selected.model #print the name of the model
 #Zamenis longissimus####
 ########################
 zl=data.sp[data.sp$species=="Zamenis_longissimus",] #select the data for the focal species
+zl=zl[!duplicated(zl),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(zl)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
@@ -2071,6 +2110,7 @@ selected.model #print the name of the model
 #Vipera aspis####
 ########################
 va=data.sp[data.sp$species=="Vipera_aspis",] #select the data for the focal species
+va=va[!duplicated(va),] #remove duplicated occurrences to avoid pseudoreplication
 
 presvals=raster::extract(rasters.selected,as.data.frame(va)[,2:3]) #extract the values from the rasters. Columns 7 and 8 correspond to lat and lon values.
 set.seed(1963) #setting random seed
